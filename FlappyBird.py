@@ -11,9 +11,11 @@ GRAVITY = 10
 FLAP_STRENGTH = 10
 
 ASSET_DIR = Path(__file__).resolve().parent
+IMAGE_DIR = ASSET_DIR / "images"
+MUSIC_DIR = ASSET_DIR / "music"
 
 def load_image(filename, *, alpha=False):
-    path = ASSET_DIR / filename
+    path = IMAGE_DIR / filename
     image = pygame.image.load(str(path))
     return image.convert_alpha() if alpha else image.convert()
 
@@ -101,9 +103,13 @@ pygame.init()
 clock = pygame.time.Clock()
 screen = pygame.display.set_mode((WIDTH, HEIGHT))
 pygame.display.set_caption("Flappy Bird")
-pygame.mixer.music.load("FB-BG-music.mp3")
-pygame.mixer.music.set_volume(0.5)
-pygame.mixer.music.play(-1)
+try:
+    pygame.mixer.init()
+    pygame.mixer.music.load(str(MUSIC_DIR / "FB-BG-music.mp3"))
+    pygame.mixer.music.set_volume(0.5)
+    pygame.mixer.music.play(-1)
+except pygame.error:
+    pass
 
 back_img = load_image("background_img.png")
 floor_img = load_image("floor_img.png")
@@ -133,16 +139,11 @@ score_tracker = {"score": 0, "high_score": 0}
 score_font = pygame.font.Font("freesansbold.ttf", 27)
 over_rect = over_img.get_rect(center=(WIDTH // 2, HEIGHT // 2))
 
-#Create a silent fallback so the game still runs if audio init fails.
-try:
-    pygame.mixer.init()
-    score_point = pygame.mixer.Sound(buffer=b"\x00\x00")
-except pygame.error:
-    class SilentSound:
-        def play(self):
-            return None
+class SilentSound:
+    def play(self):
+        return None
 
-    score_point = SilentSound()
+score_point = SilentSound()
 
 running = True
 while running:
