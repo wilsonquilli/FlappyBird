@@ -1,4 +1,4 @@
-# Flappy Bird Clone
+# Flappy Bird Evolutions
 
 A simple Flappy Bird remake built with Python and `pygame`.
 

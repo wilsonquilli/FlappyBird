@@ -21,6 +21,7 @@ BIRD_START_Y = HEIGHT // 2 - 40
 BIRD_SIZE = (68, 48)
 PIPE_WIDTH = 150
 PIPE_HEIGHT = 620
+JUNGLE_TREE_HEIGHT = 240
 GAME_OVER_WIDTH = 360
 GAME_OVER_TOP = 180
 LEVEL_TRANSITION_FRAMES = 75
@@ -31,12 +32,13 @@ IMAGE_DIR = ASSET_DIR / "images"
 MUSIC_DIR = ASSET_DIR / "music"
 IMAGE_SEARCH_DIRS = (
     IMAGE_DIR,
+    IMAGE_DIR / "assets",
     IMAGE_DIR / "backgrounds",
     IMAGE_DIR / "bird_models",
     IMAGE_DIR / "pipe_images",
 )
 
-#LEVEL CONFIG  (score threshold per level)
+#LEVEL CONFIG (score threshold per level)
 LEVEL_SCORE_THRESHOLDS = [0, 50, 100]
 MAX_LEVEL = 12  # 0-11 = normal…black-hole, 12 = retro final
 
@@ -59,7 +61,7 @@ LEVEL_MUSIC = {
 LEVEL_BACKGROUNDS = {
     0: "background_img.png",
     1: "Cyberpunk_Background.jpg",           
-    2: "Jungle_Background.avif",            
+    2: "Jungle_Background.jpg",            
     3: "Volcano_Background.jpg",           
     4: "Ice_Background.jpg",               
     5: "Underwater_Background.webp",            
@@ -73,7 +75,6 @@ LEVEL_BACKGROUNDS = {
 }
 
 LEVEL_BIRD_FRAMES = {
-    # each entry: (up_frame, mid_frame, down_frame)
     0: ("bird_up.jpg", "bird_mid.png", "bird_down.jpeg"),
     1: ("Cyber_Bird_Up.png", "Cyber_Bird_Mid.png", "Cyber_Bird_Down.png"),   
     2: ("Scarlet_Macaw_Up.png", "Scarlet_Macaw_Mid.png", "Scarlet_Macaw_Down.png"),
@@ -220,15 +221,21 @@ def build_obstacle_surface(filename, *, flipped=False, remove_bg=True):
     if remove_bg:
         sprite = remove_background_from_edges(sprite)
         sprite = trim_sprite(sprite)
+
     if flipped:
         sprite = pygame.transform.flip(sprite, False, True)
 
-    fitted = fit_sprite_to_box(sprite, (PIPE_WIDTH, PIPE_HEIGHT))
     surface = pygame.Surface((PIPE_WIDTH, PIPE_HEIGHT), pygame.SRCALPHA)
-    x = (PIPE_WIDTH - fitted.get_width()) // 2
-    # Bottom obstacles should start at the gap and extend downward.
-    # Top obstacles should end at the gap and extend upward.
-    y = PIPE_HEIGHT - fitted.get_height() if flipped else 0
+
+    if filename.startswith("Jungle_Tree_"):
+        fitted = fit_sprite_to_box(sprite, (PIPE_WIDTH, JUNGLE_TREE_HEIGHT))
+        x = (PIPE_WIDTH - fitted.get_width()) // 2
+        y = 0 if flipped else PIPE_HEIGHT - fitted.get_height()
+    else:
+        fitted = fit_sprite_to_box(sprite, (PIPE_WIDTH, PIPE_HEIGHT))
+        x = (PIPE_WIDTH - fitted.get_width()) // 2
+        y = PIPE_HEIGHT - fitted.get_height() if flipped else 0
+
     surface.blit(fitted, (x, y))
     return surface
 
@@ -300,6 +307,11 @@ def get_level_pipe_speed(level):
         return BASE_PIPE_SPEED * 2.0       
     return BASE_PIPE_SPEED
 
+def get_level_bird_speed_multiplier(level):
+    if level == 1:
+        return 1.25
+    return 1.0
+
 def get_level_gravity(level):
     if level == 9:
         return BASE_GRAVITY * 0.5         
@@ -309,7 +321,7 @@ def get_level_gravity(level):
 
 def get_level_pipe_gap(level):
     if level == 2:
-        return 320
+        return 400
     if level == 11:
         return PIPE_GAP * 1.45            
     return PIPE_GAP
@@ -380,11 +392,30 @@ def create_pipes():
     pipe_center_min = PIPE_MARGIN_TOP + gap // 2
     pipe_center_max = FLOOR_Y - PIPE_MARGIN_BOTTOM - gap // 2
     gap_center = random.randint(pipe_center_min, pipe_center_max)
+
     variant_index = random.randrange(len(current_pipe_variants))
     variant = current_pipe_variants[variant_index]
+
+    if current_level == 2:
+        top_pipe = variant["top"].get_rect(topleft=(PIPE_SPAWN_X, 0))
+        bottom_pipe = variant["bottom"].get_rect(bottomleft=(PIPE_SPAWN_X, FLOOR_Y))
+
+        return {
+            "top": top_pipe,
+            "bottom": bottom_pipe,
+            "scored": False,
+            "variant_index": variant_index,
+        }
+
     bottom_pipe = variant["bottom"].get_rect(midtop=(PIPE_SPAWN_X, gap_center + gap // 2))
     top_pipe = variant["top"].get_rect(midbottom=(PIPE_SPAWN_X, gap_center - gap // 2))
-    return {"top": top_pipe, "bottom": bottom_pipe, "scored": False, "variant_index": variant_index}
+
+    return {
+        "top": top_pipe,
+        "bottom": bottom_pipe,
+        "scored": False,
+        "variant_index": variant_index,
+    }
 
 def collides_with_pipe(bird_surface, bird_surface_rect, pipe_surface, pipe_rect, pipe_mask):
     if not bird_surface_rect.colliderect(pipe_rect):
@@ -395,14 +426,19 @@ def collides_with_pipe(bird_surface, bird_surface_rect, pipe_surface, pipe_rect,
 
 def move_and_draw_pipes(bird_surface, bird_surface_rect):
     global game_over
+
     pipe_speed = get_level_pipe_speed(current_level)
     remaining = []
+
     for pipe_pair in pipes:
         if not isinstance(pipe_pair, dict):
             continue
+
         variant = current_pipe_variants[pipe_pair.get("variant_index", 0) % len(current_pipe_variants)]
+
         top_pipe = pipe_pair["top"]
         bottom_pipe = pipe_pair["bottom"]
+
         top_pipe.centerx -= pipe_speed
         bottom_pipe.centerx -= pipe_speed
 
@@ -412,13 +448,28 @@ def move_and_draw_pipes(bird_surface, bird_surface_rect):
             screen.blit(variant["top"], top_pipe)
             screen.blit(variant["bottom"], bottom_pipe)
 
+        if True:
+            top_hit = collides_with_pipe(
+                bird_surface,
+                bird_surface_rect,
+                variant["top"],
+                top_pipe,
+                variant["top_mask"]
+            )
+
+            bottom_hit = collides_with_pipe(
+                bird_surface,
+                bird_surface_rect,
+                variant["bottom"],
+                bottom_pipe,
+                variant["bottom_mask"]
+            )
+
+            if top_hit or bottom_hit:
+                game_over = True
+
         if top_pipe.right > -variant["bottom"].get_width():
             remaining.append(pipe_pair)
-
-        top_hit = collides_with_pipe(bird_surface, bird_surface_rect, variant["top"], top_pipe, variant["top_mask"])
-        bottom_hit = collides_with_pipe(bird_surface, bird_surface_rect, variant["bottom"], bottom_pipe, variant["bottom_mask"])
-        if top_hit or bottom_hit:
-            game_over = True
 
         if not pipe_pair["scored"] and bottom_pipe.centerx < bird_rect.centerx:
             score_point.play()
@@ -479,26 +530,82 @@ def draw_pipe_neon(top_pipe, bottom_pipe, variant):
     screen.blit(variant["top"], top_pipe)
     screen.blit(variant["bottom"], bottom_pipe)
 
-def update_level1_effects(bird_rect_ref):
-    """Neon glow ring around bird."""
-    t = pygame.time.get_ticks()
-    radius = 36 + int(6 * math.sin(t / 150))
-    alpha = 160 + int(80 * math.sin(t / 200))
-    glow_surf = pygame.Surface((radius * 2, radius * 2), pygame.SRCALPHA)
-    pygame.draw.circle(glow_surf, (0, 220, 255, alpha), (radius, radius), radius, 3)
-    screen.blit(glow_surf, (bird_rect_ref.centerx - radius, bird_rect_ref.centery - radius))
+def apply_level_effects_post_bird(bird_surface_ref, bird_rect_ref, bird_movement_ref):
+    """Called after bird is drawn — returns movement delta."""
+    dy_extra = 0
+
+    if current_level == 1:
+        t = pygame.time.get_ticks()
+        pulse_alpha = 90 + int(45 * math.sin(t / 200))
+
+        mask = pygame.mask.from_surface(bird_surface_ref)
+        outline = mask.outline()
+
+        if outline:
+            padding = 16
+            glow_surf = pygame.Surface(
+                (bird_rect_ref.width + padding * 2, bird_rect_ref.height + padding * 2),
+                pygame.SRCALPHA
+            )
+
+            offset_outline = [(x + padding, y + padding) for x, y in outline]
+
+            for thickness in range(10, 2, -2):
+                pygame.draw.lines(
+                    glow_surf,
+                    (255, 35, 45, max(15, pulse_alpha - thickness * 7)),
+                    True,
+                    offset_outline,
+                    thickness
+                )
+
+            pygame.draw.lines(
+                glow_surf,
+                (255, 0, 0, 210),
+                True,
+                offset_outline,
+                2
+            )
+
+            screen.blit(
+                glow_surf,
+                (bird_rect_ref.x - padding, bird_rect_ref.y - padding)
+            )
+
+    if current_level == 3:
+        draw_ember_trail(bird_rect_ref.center)
+
+    if current_level == 4:
+        draw_frost_trail(bird_rect_ref.center)
+        dx = update_wind(bird_movement_ref)
+        bird_rect_ref.centerx += dx
+        bird_rect_ref.centerx = max(0, min(WIDTH, bird_rect_ref.centerx))
+
+    if current_level == 5:
+        dy_extra = update_buoyancy(bird_movement_ref)
+
+    if current_level == 6:
+        update_draw_gas_clouds(bird_rect_ref)
+
+    if current_level == 7:
+        update_draw_smileys(bird_rect_ref)
+
+    if current_level == 8:
+        update_draw_beams(bird_rect_ref)
+
+    if current_level == 9:
+        draw_star_trail(bird_rect_ref.center)
+        update_draw_asteroids(bird_rect_ref)
+
+    if current_level == 10:
+        dy_extra = update_draw_black_holes(bird_rect_ref, bird_movement_ref)
+
+    if current_level == 12:
+        draw_scanlines()
+
+    return dy_extra
 
 #Level 2: Jungle
-def spawn_vine():
-    x = random.randint(0, WIDTH)
-    from_top = random.choice([True, False])
-    length = random.randint(80, 180)
-    swing = random.uniform(-0.02, 0.02)
-    effect_state["vines"].append({
-        "x": x, "from_top": from_top, "length": length,
-        "angle": 0.0, "swing": swing, "timer": 0
-    })
-
 def point_to_segment_distance(px, py, ax, ay, bx, by):
     abx = bx - ax
     aby = by - ay
@@ -511,41 +618,92 @@ def point_to_segment_distance(px, py, ax, ay, bx, by):
     closest_y = ay + projection * aby
     return math.hypot(px - closest_x, py - closest_y)
 
+def spawn_vine():
+    from_top = random.choice([True, False])
+
+    vine = {
+        "x": PIPE_SPAWN_X + PIPE_WIDTH + random.randint(80, 220),
+        "from_top": from_top,
+        "length": random.randint(250, 390),
+        "angle": random.uniform(-0.18, 0.18),
+        "swing": random.uniform(-0.018, 0.018),
+        "timer": 0,
+    }
+
+    effect_state["vines"].append(vine)
+
+def draw_vine_sprite(vine, base_x, base_y, tip_x, tip_y):
+    vine_width = max(38, min(72, vine["length"] // 4))
+    vine_surface = scale_image(vine_img, (vine_width, vine["length"]))
+
+    if not vine["from_top"]:
+        vine_surface = pygame.transform.flip(vine_surface, False, True)
+
+    dx = tip_x - base_x
+    dy = tip_y - base_y
+
+    angle = -math.degrees(math.atan2(dx, dy))
+    rotated_vine = pygame.transform.rotate(vine_surface, angle)
+
+    vine_rect = rotated_vine.get_rect(
+        center=(
+            int((base_x + tip_x) / 2),
+            int((base_y + tip_y) / 2),
+        )
+    )
+
+    screen.blit(rotated_vine, vine_rect)
+
 def update_draw_vines(bird_rect_ref):
     global game_over
+
     effect_state["vine_spawn_timer"] += 1
+
     if effect_state["vine_spawn_timer"] > 120:
         effect_state["vine_spawn_timer"] = 0
         spawn_vine()
 
     remaining = []
+
     for vine in effect_state["vines"]:
         vine["timer"] += 1
         vine["angle"] += vine["swing"]
-        rad = vine["angle"]
+        vine["x"] -= get_level_pipe_speed(current_level)
+
+        base_x = vine["x"]
         base_y = 0 if vine["from_top"] else FLOOR_Y
-        tip_x = vine["x"] + math.sin(rad) * vine["length"]
-        tip_y = base_y + (vine["length"] if vine["from_top"] else -vine["length"])
-        pygame.draw.line(screen, (34, 100, 34),
-                         (vine["x"], base_y), (int(tip_x), int(tip_y)), 4)
-        # leaves
-        pygame.draw.circle(screen, (0, 160, 0), (int(tip_x), int(tip_y)), 8)
+
+        tip_x = base_x + math.sin(vine["angle"]) * 70
+
+        if vine["from_top"]:
+            tip_y = base_y + vine["length"]
+        else:
+            tip_y = base_y - vine["length"]
+
+        draw_vine_sprite(vine, base_x, base_y, tip_x, tip_y)
 
         bird_radius = max(14, min(bird_rect_ref.width, bird_rect_ref.height) // 3)
+
         line_distance = point_to_segment_distance(
             bird_rect_ref.centerx,
             bird_rect_ref.centery,
-            vine["x"],
+            base_x,
             base_y,
             tip_x,
             tip_y,
         )
-        leaf_distance = math.hypot(bird_rect_ref.centerx - tip_x, bird_rect_ref.centery - tip_y)
-        if line_distance <= bird_radius + 3 or leaf_distance <= bird_radius + 8:
+
+        leaf_distance = math.hypot(
+            bird_rect_ref.centerx - tip_x,
+            bird_rect_ref.centery - tip_y
+        )
+
+        if line_distance <= bird_radius + 10 or leaf_distance <= bird_radius + 14:
             game_over = True
 
-        if vine["timer"] < 400:
+        if vine["x"] > -120:
             remaining.append(vine)
+
     effect_state["vines"] = remaining
 
 def update_jungle_shake():
@@ -891,33 +1049,80 @@ def apply_level_effects_pre_pipes():
         draw_golden_pulse()
     return (0, 0)
 
-def apply_level_effects_post_bird(bird_rect_ref, bird_movement_ref):
+def apply_level_effects_post_bird(bird_surface_ref, bird_rect_ref, bird_movement_ref):
     """Called after bird is drawn — returns movement delta."""
     dy_extra = 0
+
     if current_level == 1:
-        update_level1_effects(bird_rect_ref)
+        t = pygame.time.get_ticks()
+        pulse_alpha = 90 + int(45 * math.sin(t / 200))
+
+        mask = pygame.mask.from_surface(bird_surface_ref)
+        outline = mask.outline()
+
+        if outline:
+            padding = 16
+
+            glow_surf = pygame.Surface(
+                (bird_rect_ref.width + padding * 2, bird_rect_ref.height + padding * 2),
+                pygame.SRCALPHA
+            )
+
+            offset_outline = [(x + padding, y + padding) for x, y in outline]
+
+            for thickness in range(10, 2, -2):
+                pygame.draw.lines(
+                    glow_surf,
+                    (255, 20, 60, max(15, pulse_alpha - thickness * 7)),
+                    True,
+                    offset_outline,
+                    thickness
+                )
+
+            pygame.draw.lines(
+                glow_surf,
+                (255, 0, 0, 210),
+                True,
+                offset_outline,
+                2
+            )
+
+            screen.blit(
+                glow_surf,
+                (bird_rect_ref.x - padding, bird_rect_ref.y - padding)
+            )
+
     if current_level == 3:
         draw_ember_trail(bird_rect_ref.center)
+
     if current_level == 4:
         draw_frost_trail(bird_rect_ref.center)
         dx = update_wind(bird_movement_ref)
         bird_rect_ref.centerx += dx
         bird_rect_ref.centerx = max(0, min(WIDTH, bird_rect_ref.centerx))
+
     if current_level == 5:
         dy_extra = update_buoyancy(bird_movement_ref)
+
     if current_level == 6:
         update_draw_gas_clouds(bird_rect_ref)
+
     if current_level == 7:
         update_draw_smileys(bird_rect_ref)
+
     if current_level == 8:
         update_draw_beams(bird_rect_ref)
+
     if current_level == 9:
         draw_star_trail(bird_rect_ref.center)
         update_draw_asteroids(bird_rect_ref)
+
     if current_level == 10:
         dy_extra = update_draw_black_holes(bird_rect_ref, bird_movement_ref)
+
     if current_level == 12:
         draw_scanlines()
+
     return dy_extra
 
 #LEVEL TRANSITION
@@ -1001,6 +1206,7 @@ pipe_mask = pygame.mask.from_surface(pipe_img)
 top_pipe_img = pygame.transform.flip(pipe_img, False, True)
 top_pipe_mask = pygame.mask.from_surface(top_pipe_img)
 over_img = load_gameplay_sprite("game_over.png", (GAME_OVER_WIDTH, 116))
+vine_img = trim_sprite(load_image("Vines.png", alpha=True))
 
 current_level = 0
 current_pipe_variants = try_load_pipe_variants(0)
@@ -1086,14 +1292,14 @@ while running:
 
     if game_started and not game_over and transition_timer == 0:
         gravity = get_level_gravity(current_level)
-        bird_movement += gravity
-        bird_rect.centery += bird_movement
-
+        bird_speed_multiplier = get_level_bird_speed_multiplier(current_level)
+        bird_movement += gravity * bird_speed_multiplier
+        bird_rect.centery += bird_movement * bird_speed_multiplier
         rotated_bird = rotate_bird(bird_img)
         rotated_bird_rect = rotated_bird.get_rect(center=bird_rect.center)
         screen.blit(rotated_bird, rotated_bird_rect)
 
-        dy_extra = apply_level_effects_post_bird(bird_rect, bird_movement)
+        dy_extra = apply_level_effects_post_bird(rotated_bird, rotated_bird_rect, bird_movement)
         if dy_extra:
             bird_movement += dy_extra
 
