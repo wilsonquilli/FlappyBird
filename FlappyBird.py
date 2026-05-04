@@ -16,30 +16,38 @@ FLAP_STRENGTH = -8.5
 PIPE_GAP = 230
 PIPE_SPAWN_X = WIDTH + 120
 BASE_PIPE_SPAWN_INTERVAL = 1550
+POINTS_PER_PIPE = 10
 BIRD_START_X = 160
 BIRD_START_Y = HEIGHT // 2 - 40
 BIRD_SIZE = (68, 48)
 PIPE_WIDTH = 150
 PIPE_HEIGHT = 620
-JUNGLE_TREE_HEIGHT = 240
+PIPE_PATTERN_MAX_STEP = 120  
 GAME_OVER_WIDTH = 360
 GAME_OVER_TOP = 180
 LEVEL_TRANSITION_FRAMES = 75
 PIPE_MARGIN_TOP = 110
 PIPE_MARGIN_BOTTOM = 110
+ICY_WIND_INTERVAL_FRAMES = 1200  # 10 seconds at 120 FPS.
+ICY_WIND_WARNING_FRAMES = 150    # Show warning for 1.25 seconds before gust.
+ICY_WIND_DURATION_FRAMES = 72    # Breeze lasts 0.6 seconds.
+ICY_WIND_PUSH = -0.38            # Gentle left push per frame; not strong enough to trap the bird.
+ICY_WIND_WARNING_IMAGE = "Wind.png"
 ASSET_DIR = Path(__file__).resolve().parent
 IMAGE_DIR = ASSET_DIR / "images"
 MUSIC_DIR = ASSET_DIR / "music"
 IMAGE_SEARCH_DIRS = (
+    ASSET_DIR,
     IMAGE_DIR,
     IMAGE_DIR / "assets",
     IMAGE_DIR / "backgrounds",
     IMAGE_DIR / "bird_models",
+    IMAGE_DIR / "floors",
     IMAGE_DIR / "pipe_images",
 )
 
-#LEVEL CONFIG (score threshold per level)
-LEVEL_SCORE_THRESHOLDS = [0, 50, 100]
+#LEVEL CONFIG
+SCORE_PER_LEVEL = 50
 MAX_LEVEL = 12  # 0-11 = normal…black-hole, 12 = retro final
 
 LEVEL_MUSIC = {
@@ -49,9 +57,9 @@ LEVEL_MUSIC = {
     3: "Volcano_Lava_Theme.mp3",         
     4: "Ice_Snow_Theme.mp3",              
     5: "Ocean_Theme.mp3",           
-    6: "Toxic_Lab.mp3",         
+    6: "Toxic_Lab_Theme.mp3",         
     7: "Backrooms_Theme.mp3",       
-    8: "Castle_Oblivion.mp3",           
+    8: "Castle_Oblivion_Theme.mp3",           
     9: "Space_Theme.mp3",            
     10: "Black_Hole_Theme.mp3",     
     11: "Heaven_Sky_Theme.mp3",        
@@ -65,35 +73,59 @@ LEVEL_BACKGROUNDS = {
     3: "Volcano_Background.jpg",           
     4: "Ice_Background.jpg",               
     5: "Underwater_Background.webp",            
-    6: "Toxic_Lab_Background.gif",            
-    7: "Backrooms_Background.jpg",         
-    8: "Castle_Oblivion_Background.jpg",             
+    6: "Toxic_Lab_Background.png",            
+    7: "Backrooms_Background.png",         
+    8: "Castle_Oblivion_Background.png",             
     9: "Space_Background.jpg",               
     10: "Black_Hole_Background.jpg",         
     11: "Sky_Background.jpg",             
     12: "Retro_Background.jpg",              
 }
 
+LEVEL_FLOORS = {
+    0: "floor_img.png",
+    1: "Neon_City_Floor.png",
+    2: "Jungle_Floor.png",
+    3: "Volcano_Floor.png",
+    4: "Icy_Floor.png",
+    5: "Ocean_Floor.png",
+    6: "Toxic_Floor.png",
+    7: "Backrooms_Floor.png",
+    8: "Castle_Oblivion_Floor.png",
+    9: "Space_Floor.png",
+    10: "Black_Hole_Floor.png",
+    11: "Sky_Floor.png",
+    12: "floor_img.png", 
+}
+
 LEVEL_BIRD_FRAMES = {
     0: ("bird_up.jpg", "bird_mid.png", "bird_down.jpeg"),
     1: ("Cyber_Bird_Up.png", "Cyber_Bird_Mid.png", "Cyber_Bird_Down.png"),   
     2: ("Scarlet_Macaw_Up.png", "Scarlet_Macaw_Mid.png", "Scarlet_Macaw_Down.png"),
-    3: ("bird3_up.png", "bird3_mid.png", "bird3_down.png"),    # flame
-    4: ("bird4_up.png", "bird4_mid.png", "bird4_down.png"),    # icy
-    5: ("bird5_up.png", "bird5_mid.png", "bird5_down.png"),    # fish
-    6: ("bird6_up.png", "bird6_mid.png", "bird6_down.png"),    # mutant
-    7: ("bird7_up.png", "bird7_mid.png", "bird7_down.png"),    # smiley
-    8: ("bird8_up.png", "bird8_mid.png", "bird8_down.png"),    # robe
-    9: ("bird9_up.png", "bird9_mid.png", "bird9_down.png"),    # star trail
-    10: ("bird10_up.png", "bird10_mid.png", "bird10_down.png"),# glitched
-    11: ("bird11_up.png", "bird11_mid.png", "bird11_down.png"),# angel
-    12: ("bird_up.jpg", "bird_mid.png", "bird_down.jpeg"),     # retro (reuse or pixel version)
+    3: ("Flame_Bird_Up.png", "Flame_Bird_Mid.png", "Flame_Bird_Down.png"),   
+    4: ("Frost_Bird_Up.png", "Frost_Bird_Mid.png", "Frost_Bird_Down.png"),   
+    5: ("Ocellaris_Clownfish_Up.png", "Ocellaris_Clownfish_Mid.png", "Ocellaris_Clownfish_Down.png"),
+    6: ("Toxic_Bird_Up.png", "Toxic_Bird_Mid.png", "Toxic_Bird_Down.png"),   
+    7: ("Backrooms_Bird_Up.png", "Backrooms_Bird_Mid.png", "Backrooms_Bird_Down.png"),  
+    8: ("Darkness_Bird_Up.png", "Darkness_Bird_Mid.png", "Darkness_Bird_Down.png"),   
+    9: ("Star_Bird_Up.png", "Star_Bird_Mid.png", "Star_Bird_Down.png"),    
+    10: ("Glitch_Bird_Up.png", "Glitch_Bird_Mid.png", "Glitch_Bird_Down.png"),
+    11: ("Angel_Bird_Up.png", "Angel_Bird_Mid.png", "Angel_Bird_Down.png"),
+    12: ("Retro_Bird_Up.png", "Retro_Bird_Mid.png", "Retro_Bird_Down.png"),     
 }
 
 LEVEL_PIPE_VARIANTS = {
     0: ("pipe_img.webp",),
-    1: ("Neon_Building_1.png", "Neon_Building_2.png", "Neon_Building_3.png"),
-    2: ("Jungle_Tree_1.png", "Jungle_Tree_2.png", "Jungle_Tree_3.png"),
+    1: ("Neon_Building_Pipe.png",),
+    2: ("Jungle_Tree_Pipe.png",),
+    3: ("Volcano_Pipe.png",),
+    4: ("Icy_Mountain.png",),
+    5: ("Sand_Castle.png",),
+    6: ("Toxic_Beaker.png",),
+    7: ("Backrooms_Pipe.png",),
+    8: ("Keyblade.png",),
+    9: ("Space_Pipe.png",),
+    11: ("Golden_Pipe.png",),
 }
 
 #IMAGE / AUDIO HELPERS
@@ -104,6 +136,10 @@ def load_image(filename, *, alpha=False):
         if candidate.exists():
             path = candidate
             break
+    if path is None:
+        recursive_match = next(IMAGE_DIR.rglob(filename), None)
+        if recursive_match is not None:
+            path = recursive_match
     if path is None:
         raise FileNotFoundError(f"Unable to locate image asset '{filename}' in {IMAGE_SEARCH_DIRS}")
     image = pygame.image.load(str(path))
@@ -197,6 +233,135 @@ def remove_bright_background_from_edges(image, threshold=235):
 
     return cleaned
 
+
+def remove_black_background_from_edges(image, threshold=18):
+    """Make only edge-connected black background pixels transparent.
+
+    This is used for Vines.png. The vine art is dark green, so we only remove
+    nearly-black pixels that connect to the outside of the image instead of
+    deleting dark pixels inside the actual vine.
+    """
+    cleaned = image.convert_alpha()
+    width, height = cleaned.get_size()
+    visited = set()
+    queue = deque()
+
+    for x in range(width):
+        queue.append((x, 0))
+        queue.append((x, height - 1))
+    for y in range(height):
+        queue.append((0, y))
+        queue.append((width - 1, y))
+
+    while queue:
+        x, y = queue.popleft()
+        if (x, y) in visited:
+            continue
+        visited.add((x, y))
+
+        red, green, blue, alpha = cleaned.get_at((x, y))
+        if alpha == 0:
+            pass
+        elif red <= threshold and green <= threshold and blue <= threshold:
+            cleaned.set_at((x, y), (red, green, blue, 0))
+        else:
+            continue
+
+        for dx, dy in ((1, 0), (-1, 0), (0, 1), (0, -1)):
+            nx, ny = x + dx, y + dy
+            if 0 <= nx < width and 0 <= ny < height and (nx, ny) not in visited:
+                queue.append((nx, ny))
+
+    return cleaned
+
+def load_vine_image(filename):
+    image = load_image(filename, alpha=True)
+    image = remove_black_background_from_edges(image, threshold=18)
+    return trim_alpha_sprite(image)
+
+def trim_alpha_sprite(image, alpha_threshold=8):
+    source = image.convert_alpha()
+    points = []
+    for x in range(source.get_width()):
+        for y in range(source.get_height()):
+            if source.get_at((x, y))[3] > alpha_threshold:
+                points.append((x, y))
+    if not points:
+        return source
+    left = min(x for x, _ in points)
+    right = max(x for x, _ in points) + 1
+    top = min(y for _, y in points)
+    bottom = max(y for _, y in points) + 1
+    return source.subsurface((left, top, right - left, bottom - top)).copy()
+
+def remove_floor_background_and_outline(image):
+    """Remove edge-connected white/gray/black boxes and thin halos from floor art.
+
+    Only pixels connected to the outside edges are removed first, so the actual
+    floor artwork stays intact while exported canvas backgrounds/outlines vanish.
+    """
+    cleaned = image.convert_alpha()
+    width, height = cleaned.get_size()
+
+    def is_grayish(red, green, blue):
+        return max(red, green, blue) - min(red, green, blue) <= 38
+
+    def is_unwanted_floor_bg(red, green, blue):
+        brightness = (red + green + blue) / 3
+        return (
+            brightness >= 215 or      # white / light gray export background
+            brightness <= 42 or       # black / very dark outline/background
+            (is_grayish(red, green, blue) and (brightness >= 120 or brightness <= 95))
+        )
+
+    visited = set()
+    queue = deque()
+    for x in range(width):
+        queue.append((x, 0))
+        queue.append((x, height - 1))
+    for y in range(height):
+        queue.append((0, y))
+        queue.append((width - 1, y))
+
+    while queue:
+        x, y = queue.popleft()
+        if (x, y) in visited:
+            continue
+        visited.add((x, y))
+
+        red, green, blue, alpha = cleaned.get_at((x, y))
+        if alpha == 0:
+            pass
+        elif is_unwanted_floor_bg(red, green, blue):
+            cleaned.set_at((x, y), (red, green, blue, 0))
+        else:
+            continue
+
+        for dx, dy in ((1, 0), (-1, 0), (0, 1), (0, -1)):
+            nx, ny = x + dx, y + dy
+            if 0 <= nx < width and 0 <= ny < height and (nx, ny) not in visited:
+                queue.append((nx, ny))
+
+    # Clear tiny leftover edge halos caused by antialiasing or smooth scaling.
+    for _ in range(2):
+        to_clear = []
+        for x in range(width):
+            for y in range(height):
+                red, green, blue, alpha = cleaned.get_at((x, y))
+                if alpha == 0 or not is_unwanted_floor_bg(red, green, blue):
+                    continue
+                for dx, dy in ((1, 0), (-1, 0), (0, 1), (0, -1)):
+                    nx, ny = x + dx, y + dy
+                    if 0 <= nx < width and 0 <= ny < height and cleaned.get_at((nx, ny))[3] == 0:
+                        to_clear.append((x, y, red, green, blue))
+                        break
+        if not to_clear:
+            break
+        for x, y, red, green, blue in to_clear:
+            cleaned.set_at((x, y), (red, green, blue, 0))
+
+    return cleaned
+
 def load_bird_frame(filename):
     image = load_image(filename, alpha=True)
     image = remove_bright_background_from_edges(image)
@@ -209,74 +374,88 @@ def load_gameplay_sprite(filename, size):
     image = remove_background_from_edges(image)
     return scale_image(image, size)
 
-def fit_sprite_to_box(image, box_size):
-    box_width, box_height = box_size
-    width, height = image.get_size()
-    scale = min(box_width / width, box_height / height)
-    scaled_size = (max(1, int(width * scale)), max(1, int(height * scale)))
-    return scale_image(image, scaled_size)
+
+def crop_single_sprite_frame(image):
+    """If an obstacle image is a vertical sprite sheet, crop it down to one frame.
+
+    Some obstacle files, especially Icy_Mountain.png, can contain several copies
+    stacked vertically in one image. If we scale that whole sheet, it looks like
+    multiple mountains stacked on top of each other. This extracts one usable
+    sprite before scaling it into a pipe-sized obstacle.
+    """
+    source = image.convert_alpha()
+    width, height = source.get_size()
+
+    # First try to find separate non-transparent row bands.
+    occupied_rows = []
+    for y in range(height):
+        has_pixel = False
+        for x in range(width):
+            if source.get_at((x, y))[3] > 10:
+                has_pixel = True
+                break
+        if has_pixel:
+            occupied_rows.append(y)
+
+    bands = []
+    if occupied_rows:
+        start = prev = occupied_rows[0]
+        for y in occupied_rows[1:]:
+            if y <= prev + 1:
+                prev = y
+            else:
+                bands.append((start, prev))
+                start = prev = y
+        bands.append((start, prev))
+
+    usable_bands = [(top, bottom) for top, bottom in bands if bottom - top + 1 >= 12]
+    if len(usable_bands) >= 2:
+        top, bottom = max(usable_bands, key=lambda band: band[1] - band[0])
+        return source.subsurface((0, top, width, bottom - top + 1)).copy()
+
+    if height > width * 2.0:
+        estimated_frames = max(2, round(height / max(1, width)))
+        frame_height = max(1, height // estimated_frames)
+        return source.subsurface((0, 0, width, frame_height)).copy()
+
+    return source
 
 def build_obstacle_surface(filename, *, flipped=False, remove_bg=True):
+    """Build every themed obstacle inside the exact same pipe-sized box.
+
+    The old code gave some levels shorter custom obstacles, which made certain
+    stages behave differently and could make art look stacked or duplicated.
+    Now every level uses one top surface and one bottom surface at
+    (PIPE_WIDTH, PIPE_HEIGHT), then placement decides the playable gap.
+    """
     sprite = load_image(filename, alpha=True)
     if remove_bg:
-        sprite = remove_background_from_edges(sprite)
+        if filename.startswith("Neon_Building_"):
+            # Neon building pipe exports can include a bright/white or pale
+            # edge-connected box. Remove only edge-connected background pixels
+            # before trimming, so score, pipe placement, and collisions stay
+            # exactly the same while the visible box disappears.
+            sprite = remove_bright_background_from_edges(sprite, threshold=220)
+            sprite = remove_background_from_edges(sprite, tolerance=95)
+        else:
+            sprite = remove_background_from_edges(sprite)
         sprite = trim_sprite(sprite)
 
+    sprite = crop_single_sprite_frame(sprite)
     if flipped:
         sprite = pygame.transform.flip(sprite, False, True)
 
-    surface = pygame.Surface((PIPE_WIDTH, PIPE_HEIGHT), pygame.SRCALPHA)
-
-    if filename.startswith("Jungle_Tree_"):
-        fitted = fit_sprite_to_box(sprite, (PIPE_WIDTH, JUNGLE_TREE_HEIGHT))
-        x = (PIPE_WIDTH - fitted.get_width()) // 2
-        y = 0 if flipped else PIPE_HEIGHT - fitted.get_height()
-    else:
-        fitted = fit_sprite_to_box(sprite, (PIPE_WIDTH, PIPE_HEIGHT))
-        x = (PIPE_WIDTH - fitted.get_width()) // 2
-        y = PIPE_HEIGHT - fitted.get_height() if flipped else 0
-
-    surface.blit(fitted, (x, y))
-    return surface
-
-def try_load_bird_frames(level):
-    """Load bird frames for a level, falling back to level-0 frames on missing files."""
-    frames_names = LEVEL_BIRD_FRAMES.get(level, LEVEL_BIRD_FRAMES[0])
-    loaded = []
-    fallback_names = LEVEL_BIRD_FRAMES[0]
-    for i, name in enumerate(frames_names):
-        try:
-            loaded.append(load_bird_frame(name))
-        except Exception:
-            loaded.append(load_bird_frame(fallback_names[i]))
-    return loaded
-
-def try_load_background(level):
-    """Load background for a level, falling back to level-0 on missing files."""
-    name = LEVEL_BACKGROUNDS.get(level, LEVEL_BACKGROUNDS[0])
-    try:
-        return scale_image(load_image(name), (WIDTH, HEIGHT))
-    except Exception:
-        return scale_image(load_image(LEVEL_BACKGROUNDS[0]), (WIDTH, HEIGHT))
-
-def try_play_music(level):
-    name = LEVEL_MUSIC.get(level, LEVEL_MUSIC[0])
-    path = MUSIC_DIR / name
-    try:
-        pygame.mixer.music.load(str(path))
-        pygame.mixer.music.set_volume(0.5)
-        pygame.mixer.music.play(-1)
-    except pygame.error:
-        pass
+    return scale_image(sprite, (PIPE_WIDTH, PIPE_HEIGHT))
 
 def build_pipe_variant(filename):
     if filename == "pipe_img.webp":
         image = load_gameplay_sprite(filename, (PIPE_WIDTH, PIPE_HEIGHT))
         top_image = pygame.transform.flip(image, False, True)
     else:
-        should_remove_bg = not filename.startswith("Neon_Building_")
-        image = build_obstacle_surface(filename, flipped=False, remove_bg=should_remove_bg)
-        top_image = build_obstacle_surface(filename, flipped=True, remove_bg=should_remove_bg)
+        # Keep the same pipe generation/scoring behavior, but clean every
+        # themed pipe image background, including Neon City buildings.
+        image = build_obstacle_surface(filename, flipped=False, remove_bg=True)
+        top_image = build_obstacle_surface(filename, flipped=True, remove_bg=True)
     return {
         "bottom": image,
         "bottom_mask": pygame.mask.from_surface(image),
@@ -296,6 +475,64 @@ def try_load_pipe_variants(level):
         for fallback_name in LEVEL_PIPE_VARIANTS[0]:
             variants.append(build_pipe_variant(fallback_name))
     return variants
+
+def try_load_background(level):
+    filename = LEVEL_BACKGROUNDS.get(level, LEVEL_BACKGROUNDS[0])
+    fallback = LEVEL_BACKGROUNDS[0]
+    try:
+        image = load_image(filename)
+    except Exception:
+        image = load_image(fallback)
+    return scale_image(image, (WIDTH, HEIGHT))
+
+def try_load_floor(level):
+    filename = LEVEL_FLOORS.get(level, LEVEL_FLOORS[0])
+    fallback = LEVEL_FLOORS[0]
+    try:
+        image = load_image(filename, alpha=True)
+    except Exception:
+        try:
+            image = load_image(fallback, alpha=True)
+        except Exception:
+            image = pygame.Surface((WIDTH, FLOOR_HEIGHT), pygame.SRCALPHA)
+            image.fill((120, 90, 55, 255))
+
+    image = trim_top_edge(image, 3)
+    image = remove_floor_background_and_outline(image)
+    image = scale_image(image, (WIDTH, FLOOR_HEIGHT))
+    image = remove_floor_background_and_outline(image)
+    return image
+
+def try_load_bird_frames(level):
+    frame_names = LEVEL_BIRD_FRAMES.get(level, LEVEL_BIRD_FRAMES[0])
+    frames = []
+    for name in frame_names:
+        try:
+            frames.append(load_bird_frame(name))
+        except Exception:
+            continue
+
+    if not frames:
+        for fallback_name in LEVEL_BIRD_FRAMES[0]:
+            frames.append(load_bird_frame(fallback_name))
+
+    return frames
+
+def try_play_music(level):
+    if not pygame.mixer.get_init():
+        return
+
+    filename = LEVEL_MUSIC.get(level, LEVEL_MUSIC[0])
+    path = MUSIC_DIR / filename
+    if not path.exists():
+        path = MUSIC_DIR / LEVEL_MUSIC[0]
+
+    try:
+        pygame.mixer.music.load(str(path))
+        pygame.mixer.music.set_volume(0.5)
+        pygame.mixer.music.play(-1)
+    except pygame.error:
+        pass
 
 #PIPE SPEED / GRAVITY PER LEVEL
 def get_level_pipe_speed(level):
@@ -337,7 +574,8 @@ def get_level_spawn_interval(level):
 
 #DRAWING HELPERS
 def draw_floor():
-    pygame.draw.rect(screen, ground_fill_color, (0, FLOOR_Y, WIDTH, GROUND_SEAM_HEIGHT))
+    # Draw only the floor art. The old seam rectangle could appear as an
+    # unwanted white/gray/black line above transparent themed floors.
     screen.blit(floor_img, (floor_x, FLOOR_Y))
     screen.blit(floor_img, (floor_x + floor_img.get_width(), FLOOR_Y))
 
@@ -388,24 +626,27 @@ def update_score():
 
 #PIPE CREATION / MOVEMENT
 def create_pipes():
+    global last_pipe_gap_center
+
     gap = get_level_pipe_gap(current_level)
     pipe_center_min = PIPE_MARGIN_TOP + gap // 2
     pipe_center_max = FLOOR_Y - PIPE_MARGIN_BOTTOM - gap // 2
-    gap_center = random.randint(pipe_center_min, pipe_center_max)
+
+    if pipe_center_min > pipe_center_max:
+        pipe_center_min = gap // 2 + 20
+        pipe_center_max = FLOOR_Y - gap // 2 - 20
+
+    if last_pipe_gap_center is None:
+        gap_center = random.randint(pipe_center_min, pipe_center_max)
+    else:
+        low = max(pipe_center_min, int(last_pipe_gap_center - PIPE_PATTERN_MAX_STEP))
+        high = min(pipe_center_max, int(last_pipe_gap_center + PIPE_PATTERN_MAX_STEP))
+        gap_center = random.randint(low, high)
+
+    last_pipe_gap_center = gap_center
 
     variant_index = random.randrange(len(current_pipe_variants))
     variant = current_pipe_variants[variant_index]
-
-    if current_level == 2:
-        top_pipe = variant["top"].get_rect(topleft=(PIPE_SPAWN_X, 0))
-        bottom_pipe = variant["bottom"].get_rect(bottomleft=(PIPE_SPAWN_X, FLOOR_Y))
-
-        return {
-            "top": top_pipe,
-            "bottom": bottom_pipe,
-            "scored": False,
-            "variant_index": variant_index,
-        }
 
     bottom_pipe = variant["bottom"].get_rect(midtop=(PIPE_SPAWN_X, gap_center + gap // 2))
     top_pipe = variant["top"].get_rect(midbottom=(PIPE_SPAWN_X, gap_center - gap // 2))
@@ -417,7 +658,7 @@ def create_pipes():
         "variant_index": variant_index,
     }
 
-def collides_with_pipe(bird_surface, bird_surface_rect, pipe_surface, pipe_rect, pipe_mask):
+def collides_with_pipe(bird_surface, bird_surface_rect, pipe_rect, pipe_mask):
     if not bird_surface_rect.colliderect(pipe_rect):
         return False
     bird_mask = pygame.mask.from_surface(bird_surface)
@@ -429,6 +670,7 @@ def move_and_draw_pipes(bird_surface, bird_surface_rect):
 
     pipe_speed = get_level_pipe_speed(current_level)
     remaining = []
+    scored_this_frame = False
 
     for pipe_pair in pipes:
         if not isinstance(pipe_pair, dict):
@@ -438,6 +680,7 @@ def move_and_draw_pipes(bird_surface, bird_surface_rect):
 
         top_pipe = pipe_pair["top"]
         bottom_pipe = pipe_pair["bottom"]
+        previous_centerx = pipe_pair.get("previous_centerx", bottom_pipe.centerx)
 
         top_pipe.centerx -= pipe_speed
         bottom_pipe.centerx -= pipe_speed
@@ -448,33 +691,38 @@ def move_and_draw_pipes(bird_surface, bird_surface_rect):
             screen.blit(variant["top"], top_pipe)
             screen.blit(variant["bottom"], bottom_pipe)
 
-        if True:
-            top_hit = collides_with_pipe(
+        top_hit = collides_with_pipe(
                 bird_surface,
                 bird_surface_rect,
-                variant["top"],
                 top_pipe,
                 variant["top_mask"]
             )
 
-            bottom_hit = collides_with_pipe(
+        bottom_hit = collides_with_pipe(
                 bird_surface,
                 bird_surface_rect,
-                variant["bottom"],
                 bottom_pipe,
                 variant["bottom_mask"]
             )
 
-            if top_hit or bottom_hit:
-                game_over = True
+        if top_hit or bottom_hit:
+            game_over = True
 
         if top_pipe.right > -variant["bottom"].get_width():
             remaining.append(pipe_pair)
 
-        if not pipe_pair["scored"] and bottom_pipe.centerx < bird_rect.centerx:
-            score_point.play()
-            score_tracker["score"] += 10
+        crossed_bird = previous_centerx >= bird_rect.centerx and bottom_pipe.centerx < bird_rect.centerx
+        if not pipe_pair["scored"] and crossed_bird:
+            # Count exactly one successful pipe pass per frame. This keeps the
+            # level-0 scoring behavior for every level and prevents accidental
+            # stacked/duplicate pipe pairs from adding multiple scores at once.
+            if not scored_this_frame:
+                score_point.play()
+                score_tracker["score"] += POINTS_PER_PIPE
+                scored_this_frame = True
             pipe_pair["scored"] = True
+
+        pipe_pair["previous_centerx"] = bottom_pipe.centerx
 
     pipes[:] = remaining
 
@@ -501,8 +749,10 @@ def reset_effect_state():
     effect_state["heat_shake_offset"] = (0, 0)
     effect_state["heat_wave_lines"] = []
     effect_state["wind_active"] = False
+    effect_state["wind_warning"] = False
     effect_state["wind_timer"] = 0
-    effect_state["wind_next"] = random.randint(180, 360)
+    effect_state["wind_cycle_timer"] = 0
+    effect_state["wind_next"] = ICY_WIND_INTERVAL_FRAMES
     effect_state["buoy_timer"] = 0
     effect_state["buoy_next"] = random.randint(120, 240)
     effect_state["gas_clouds"] = []
@@ -529,81 +779,6 @@ def draw_pipe_neon(top_pipe, bottom_pipe, variant):
     """Draw neon building obstacles without extra flashing overlays."""
     screen.blit(variant["top"], top_pipe)
     screen.blit(variant["bottom"], bottom_pipe)
-
-def apply_level_effects_post_bird(bird_surface_ref, bird_rect_ref, bird_movement_ref):
-    """Called after bird is drawn — returns movement delta."""
-    dy_extra = 0
-
-    if current_level == 1:
-        t = pygame.time.get_ticks()
-        pulse_alpha = 90 + int(45 * math.sin(t / 200))
-
-        mask = pygame.mask.from_surface(bird_surface_ref)
-        outline = mask.outline()
-
-        if outline:
-            padding = 16
-            glow_surf = pygame.Surface(
-                (bird_rect_ref.width + padding * 2, bird_rect_ref.height + padding * 2),
-                pygame.SRCALPHA
-            )
-
-            offset_outline = [(x + padding, y + padding) for x, y in outline]
-
-            for thickness in range(10, 2, -2):
-                pygame.draw.lines(
-                    glow_surf,
-                    (255, 35, 45, max(15, pulse_alpha - thickness * 7)),
-                    True,
-                    offset_outline,
-                    thickness
-                )
-
-            pygame.draw.lines(
-                glow_surf,
-                (255, 0, 0, 210),
-                True,
-                offset_outline,
-                2
-            )
-
-            screen.blit(
-                glow_surf,
-                (bird_rect_ref.x - padding, bird_rect_ref.y - padding)
-            )
-
-    if current_level == 3:
-        draw_ember_trail(bird_rect_ref.center)
-
-    if current_level == 4:
-        draw_frost_trail(bird_rect_ref.center)
-        dx = update_wind(bird_movement_ref)
-        bird_rect_ref.centerx += dx
-        bird_rect_ref.centerx = max(0, min(WIDTH, bird_rect_ref.centerx))
-
-    if current_level == 5:
-        dy_extra = update_buoyancy(bird_movement_ref)
-
-    if current_level == 6:
-        update_draw_gas_clouds(bird_rect_ref)
-
-    if current_level == 7:
-        update_draw_smileys(bird_rect_ref)
-
-    if current_level == 8:
-        update_draw_beams(bird_rect_ref)
-
-    if current_level == 9:
-        draw_star_trail(bird_rect_ref.center)
-        update_draw_asteroids(bird_rect_ref)
-
-    if current_level == 10:
-        dy_extra = update_draw_black_holes(bird_rect_ref, bird_movement_ref)
-
-    if current_level == 12:
-        draw_scanlines()
-
-    return dy_extra
 
 #Level 2: Jungle
 def point_to_segment_distance(px, py, ax, ay, bx, by):
@@ -632,7 +807,7 @@ def spawn_vine():
 
     effect_state["vines"].append(vine)
 
-def draw_vine_sprite(vine, base_x, base_y, tip_x, tip_y):
+def build_vine_surface_and_rect(vine, base_x, base_y, tip_x, tip_y):
     vine_width = max(38, min(72, vine["length"] // 4))
     vine_surface = scale_image(vine_img, (vine_width, vine["length"]))
 
@@ -652,7 +827,18 @@ def draw_vine_sprite(vine, base_x, base_y, tip_x, tip_y):
         )
     )
 
-    screen.blit(rotated_vine, vine_rect)
+    return rotated_vine, vine_rect
+
+def bird_touches_vine_pixels(vine_surface, vine_rect, bird_rect_ref):
+    # Fast rectangle check first, then exact pixel-mask overlap. This prevents
+    # the transparent canvas around the vine from killing the player.
+    if not bird_rect_ref.colliderect(vine_rect):
+        return False
+
+    bird_mask = pygame.mask.from_surface(bird_img)
+    vine_mask = pygame.mask.from_surface(vine_surface)
+    offset = (bird_rect_ref.left - vine_rect.left, bird_rect_ref.top - vine_rect.top)
+    return vine_mask.overlap(bird_mask, offset) is not None
 
 def update_draw_vines(bird_rect_ref):
     global game_over
@@ -680,28 +866,18 @@ def update_draw_vines(bird_rect_ref):
         else:
             tip_y = base_y - vine["length"]
 
-        draw_vine_sprite(vine, base_x, base_y, tip_x, tip_y)
+        vine_surface, vine_rect = build_vine_surface_and_rect(vine, base_x, base_y, tip_x, tip_y)
+        screen.blit(vine_surface, vine_rect)
 
-        bird_radius = max(14, min(bird_rect_ref.width, bird_rect_ref.height) // 3)
-
-        line_distance = point_to_segment_distance(
-            bird_rect_ref.centerx,
-            bird_rect_ref.centery,
-            base_x,
-            base_y,
-            tip_x,
-            tip_y,
-        )
-
-        leaf_distance = math.hypot(
-            bird_rect_ref.centerx - tip_x,
-            bird_rect_ref.centery - tip_y
-        )
-
-        if line_distance <= bird_radius + 10 or leaf_distance <= bird_radius + 14:
+        if bird_touches_vine_pixels(vine_surface, vine_rect, bird_rect_ref):
             game_over = True
 
-        if vine["x"] > -120:
+        # Keep newly spawned vines even while they are still off-screen to the
+        # right. The old check also required vine_rect.left < WIDTH + 180, but
+        # vines spawn farther right than that, so they were deleted before they
+        # could scroll into view. Only remove a vine after it has fully moved
+        # past the left side of the screen.
+        if vine_rect.right > -120:
             remaining.append(vine)
 
     effect_state["vines"] = remaining
@@ -733,13 +909,32 @@ def update_heat_shake():
     return effect_state["heat_shake_offset"]
 
 def draw_heat_waves():
+    """Stronger lava heat shimmer: visibly warps screen strips and adds hot-air bands."""
     t = pygame.time.get_ticks()
-    for i in range(0, HEIGHT, 40):
-        offset = int(3 * math.sin((t / 300) + i * 0.05))
-        heat_color = (255, 80, 0, 30)
-        s = pygame.Surface((WIDTH, 3), pygame.SRCALPHA)
+    original = screen.copy()
+
+    band_height = 6
+    amplitude = 11
+    for y in range(0, FLOOR_Y, band_height):
+        offset = int(amplitude * math.sin((t / 105) + y * 0.07))
+        strip = original.subsurface((0, y, WIDTH, band_height)).copy()
+        screen.blit(strip, (offset, y))
+
+        if offset > 0:
+            screen.blit(strip, (offset - WIDTH, y))
+        elif offset < 0:
+            screen.blit(strip, (offset + WIDTH, y))
+
+    for y in range(0, FLOOR_Y, 24):
+        offset = int(amplitude * math.sin((t / 130) + y * 0.08))
+        heat_color = (255, 90, 0, 70)
+        s = pygame.Surface((WIDTH, 4), pygame.SRCALPHA)
         s.fill(heat_color)
-        screen.blit(s, (offset, i))
+        screen.blit(s, (offset, y))
+
+    glow = pygame.Surface((WIDTH, FLOOR_Y), pygame.SRCALPHA)
+    glow.fill((255, 55, 0, 24))
+    screen.blit(glow, (0, 0))
 
 def draw_ember_trail(bird_center):
     """Draw a small ember particle trail behind the bird for level 3."""
@@ -752,18 +947,57 @@ def draw_ember_trail(bird_center):
 
 #Level 4: Ice / Snow
 def update_wind(bird_movement_val):
-    """Returns a horizontal push to apply to bird_rect each frame."""
-    effect_state["wind_timer"] += 1
+    """Level 4 icy wind cycle.
+
+    Every 10 seconds, a warning appears first, then a short gentle breeze
+    pushes the bird a little left. The push is intentionally weak and capped
+    so players do not get stuck on the left wall.
+    """
+    effect_state["wind_cycle_timer"] += 1
+
+    warning_start = max(0, effect_state["wind_next"] - ICY_WIND_WARNING_FRAMES)
+
     if not effect_state["wind_active"]:
-        if effect_state["wind_timer"] >= effect_state["wind_next"]:
+        effect_state["wind_warning"] = warning_start <= effect_state["wind_cycle_timer"] < effect_state["wind_next"]
+
+        if effect_state["wind_cycle_timer"] >= effect_state["wind_next"]:
             effect_state["wind_active"] = True
+            effect_state["wind_warning"] = False
             effect_state["wind_timer"] = 0
     else:
-        if effect_state["wind_timer"] >= 60:
+        effect_state["wind_timer"] += 1
+        if effect_state["wind_timer"] >= ICY_WIND_DURATION_FRAMES:
             effect_state["wind_active"] = False
+            effect_state["wind_warning"] = False
             effect_state["wind_timer"] = 0
-            effect_state["wind_next"] = random.randint(180, 360)
-    return -2 if effect_state["wind_active"] else 0  
+            effect_state["wind_cycle_timer"] = 0
+            effect_state["wind_next"] = ICY_WIND_INTERVAL_FRAMES
+
+    return ICY_WIND_PUSH if effect_state["wind_active"] else 0
+
+def draw_wind_warning():
+    """Draw the warning image before Level 4 wind starts, with a safe fallback."""
+    if not effect_state.get("wind_warning"):
+        return
+
+    t = pygame.time.get_ticks()
+    alpha = 150 + int(80 * abs(math.sin(t / 140)))
+
+    if wind_warning_img is not None:
+        warning = wind_warning_img.copy()
+        warning.set_alpha(alpha)
+        rect = warning.get_rect(center=(WIDTH // 2, 150))
+        screen.blit(warning, rect)
+    else:
+        # Fallback if the image file is missing: draw a simple wind icon.
+        warning = pygame.Surface((170, 92), pygame.SRCALPHA)
+        pygame.draw.rect(warning, (235, 245, 255, min(185, alpha)), warning.get_rect(), border_radius=18)
+        for y, length in ((28, 105), (47, 135), (66, 90)):
+            pygame.draw.line(warning, (115, 150, 180, alpha), (24, y), (24 + length, y), 6)
+            pygame.draw.circle(warning, (115, 150, 180, alpha), (24, y), 3)
+        text = prompt_font.render("WIND!", True, (70, 105, 135))
+        warning.blit(text, text.get_rect(center=(85, 18)))
+        screen.blit(warning, warning.get_rect(center=(WIDTH // 2, 150)))
 
 def draw_snowflakes():
     if "snowflakes" not in effect_state:
@@ -1039,7 +1273,6 @@ def apply_level_effects_pre_pipes():
         update_draw_vines(bird_rect)
         return update_jungle_shake()
     if current_level == 3:
-        draw_heat_waves()
         return update_heat_shake()
     if current_level == 4:
         draw_snowflakes()
@@ -1051,6 +1284,7 @@ def apply_level_effects_pre_pipes():
 
 def apply_level_effects_post_bird(bird_surface_ref, bird_rect_ref, bird_movement_ref):
     """Called after bird is drawn — returns movement delta."""
+    global bird_rect
     dy_extra = 0
 
     if current_level == 1:
@@ -1098,8 +1332,13 @@ def apply_level_effects_post_bird(bird_surface_ref, bird_rect_ref, bird_movement
     if current_level == 4:
         draw_frost_trail(bird_rect_ref.center)
         dx = update_wind(bird_movement_ref)
-        bird_rect_ref.centerx += dx
-        bird_rect_ref.centerx = max(0, min(WIDTH, bird_rect_ref.centerx))
+        if dx:
+            bird_rect_ref.centerx += dx
+            # Keep enough room to recover; the breeze can never pin the bird
+            # directly against the left edge.
+            bird_rect_ref.centerx = max(BIRD_SIZE[0] + 18, min(WIDTH - BIRD_SIZE[0], bird_rect_ref.centerx))
+            bird_rect.centerx = bird_rect_ref.centerx
+        draw_wind_warning()
 
     if current_level == 5:
         dy_extra = update_buoyancy(bird_movement_ref)
@@ -1126,31 +1365,47 @@ def apply_level_effects_post_bird(bird_surface_ref, bird_rect_ref, bird_movement
     return dy_extra
 
 #LEVEL TRANSITION
+def score_needed_for_next_level(level):
+    return (level + 1) * SCORE_PER_LEVEL
+
 def compute_level(score):
-    if score < LEVEL_SCORE_THRESHOLDS[1]:
-        return 0
-    if score < LEVEL_SCORE_THRESHOLDS[2]:
-        return 1
-    return min(2 + ((score - LEVEL_SCORE_THRESHOLDS[2]) // 100), MAX_LEVEL)
+    return min(int(score) // SCORE_PER_LEVEL, MAX_LEVEL)
+
+def should_level_up():
+    if current_level >= MAX_LEVEL or pending_level is not None or transition_timer > 0:
+        return False
+    return score_tracker["score"] >= score_needed_for_next_level(current_level)
 
 def start_level_transition(new_level):
     global pending_level, transition_timer
+
+    # Immediately freeze scoring on all in-flight pipes so carry-over points
+    # can never push the score past the next level's threshold mid-transition.
+    for pipe_pair in pipes:
+        if isinstance(pipe_pair, dict):
+            pipe_pair["scored"] = True
+
+    # Snap score to exactly the threshold for this level boundary so every
+    # level always starts from a clean multiple of SCORE_PER_LEVEL.
+    score_tracker["score"] = new_level * SCORE_PER_LEVEL
 
     pending_level = new_level
     transition_timer = LEVEL_TRANSITION_FRAMES
 
 def transition_to_level(new_level):
     global current_level, current_birds, bird_img, bird_rect, current_pipe_spawn_interval
-    global back_img, ground_fill_color, current_pipe_variants
-    global pipes
+    global back_img, floor_img, ground_fill_color, current_pipe_variants
+    global pipes, last_pipe_gap_center
 
     current_level = new_level
     current_birds = try_load_bird_frames(new_level)
     bird_img = current_birds[bird_index]
     bird_rect = bird_img.get_rect(center=bird_rect.center)
     back_img = try_load_background(new_level)
+    floor_img = try_load_floor(new_level)
     current_pipe_variants = try_load_pipe_variants(new_level)
     pipes = []
+    last_pipe_gap_center = None
     ground_fill_color = back_img.get_at((0, back_img.get_height() - 1))
     try_play_music(new_level)
     reset_effect_state()
@@ -1161,10 +1416,12 @@ def transition_to_level(new_level):
 #GAME RESET
 def reset_game():
     global bird_rect, bird_movement, pipes, game_over, game_started
-    global current_level, current_birds, bird_img, back_img, current_pipe_spawn_interval
+    global current_level, current_birds, bird_img, back_img, floor_img, current_pipe_spawn_interval
     global ground_fill_color, current_pipe_variants, pending_level, transition_timer
+    global last_pipe_gap_center
 
     pipes = []
+    last_pipe_gap_center = None
     bird_movement = 0
     game_over = False
     game_started = False
@@ -1177,6 +1434,7 @@ def reset_game():
     bird_img = current_birds[0]
     bird_rect = bird_img.get_rect(center=(BIRD_START_X, BIRD_START_Y))
     back_img = try_load_background(0)
+    floor_img = try_load_floor(0)
     current_pipe_variants = try_load_pipe_variants(0)
     ground_fill_color = back_img.get_at((0, back_img.get_height() - 1))
     try_play_music(0)
@@ -1200,13 +1458,17 @@ except pygame.error:
 
 #ASSET LOAD
 back_img = try_load_background(0)
-floor_img = scale_image(trim_top_edge(load_image("floor_img.png"), 3), (WIDTH, FLOOR_HEIGHT))
+floor_img = try_load_floor(0)
 pipe_img = load_gameplay_sprite("pipe_img.webp", (PIPE_WIDTH, PIPE_HEIGHT))
 pipe_mask = pygame.mask.from_surface(pipe_img)
 top_pipe_img = pygame.transform.flip(pipe_img, False, True)
 top_pipe_mask = pygame.mask.from_surface(top_pipe_img)
 over_img = load_gameplay_sprite("game_over.png", (GAME_OVER_WIDTH, 116))
-vine_img = trim_sprite(load_image("Vines.png", alpha=True))
+vine_img = load_vine_image("Vines.png")
+try:
+    wind_warning_img = scale_image(load_image(ICY_WIND_WARNING_IMAGE, alpha=True), (135, 135))
+except Exception:
+    wind_warning_img = None
 
 current_level = 0
 current_pipe_variants = try_load_pipe_variants(0)
@@ -1223,6 +1485,7 @@ pygame.time.set_timer(bird_flap, 200)
 pygame.time.set_timer(create_pipe, current_pipe_spawn_interval)
 
 pipes = []
+last_pipe_gap_center = None
 floor_x = 0
 game_over = False
 game_started = False
@@ -1266,7 +1529,7 @@ while running:
             bird_index = (bird_index + 1) % len(current_birds)
             bird_img, bird_rect = animate_bird()
 
-        if event.type == create_pipe and game_started and not game_over:
+        if event.type == create_pipe and game_started and not game_over and transition_timer == 0 and pending_level is None:
             pipes.append(create_pipes())
 
     if transition_timer > 0:
@@ -1275,10 +1538,6 @@ while running:
             transition_to_level(pending_level)
         if transition_timer == 0:
             pending_level = None
-    else:
-        new_level = compute_level(score_tracker["score"])
-        if new_level != current_level:
-            start_level_transition(new_level)
 
     screen.blit(back_img, (0, 0))
 
@@ -1303,8 +1562,13 @@ while running:
         if dy_extra:
             bird_movement += dy_extra
 
-        if current_level != 10:
-            move_and_draw_pipes(rotated_bird, rotated_bird_rect)
+        move_and_draw_pipes(rotated_bird, rotated_bird_rect)
+
+        if should_level_up():
+            start_level_transition(min(current_level + 1, MAX_LEVEL))
+
+        if current_level == 3:
+            draw_heat_waves()
 
         update_score()
         draw_score("game_on")
