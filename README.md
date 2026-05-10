@@ -1,7 +1,10 @@
 # Flappy Bird Evolutions
 
 `Flappy Bird Evolutions` is a multi-level Flappy Bird remake built with Python, `pygame`, and `opencv-python`. The game starts with classic Flappy Bird and gradually shifts into themed stages with new visuals, music, movement changes, and hazards.
-Download the game here: wilito2401.itch.io/flappy-bird-evolutions
+
+## Download
+
+Download the game here: [Flappy Bird Evolutions on itch.io](https://wilito2401.itch.io/flappy-bird-evolutions)
 
 ## Features
 
