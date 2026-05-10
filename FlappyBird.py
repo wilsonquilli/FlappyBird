@@ -74,18 +74,23 @@ BLACK_HOLE_PULL_STRENGTH = 1.15
 BLACK_HOLE_KILL_DISTANCE = 38
 BLACK_HOLE_BLINK_DURATION = 24
 KEYBLADE_PIPE_VARIANT_CACHE = None
-ASSET_DIR = Path(__file__).resolve().parent
+
+if getattr(sys, 'frozen', False):
+    PROJECT_DIR = Path(sys.executable).resolve().parent
+else:
+    PROJECT_DIR = Path(__file__).resolve().parent
+    
+ASSET_DIR = PROJECT_DIR / "assets"
 IMAGE_DIR = ASSET_DIR / "images"
+OBJECT_DIR = IMAGE_DIR / "objects"
 MUSIC_DIR = ASSET_DIR / "music"
 VIDEO_DIR = ASSET_DIR / "videos"
 IMAGE_SEARCH_DIRS = (
-    ASSET_DIR,
     IMAGE_DIR,
-    IMAGE_DIR / "assets",
     IMAGE_DIR / "backgrounds",
     IMAGE_DIR / "bird_models",
     IMAGE_DIR / "floors",
-    IMAGE_DIR / "pipe_images",
+    OBJECT_DIR,
 )
 
 #LEVEL CONFIG
